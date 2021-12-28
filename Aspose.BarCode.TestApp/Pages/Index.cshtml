@@ -1,0 +1,86 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center" id="contentArea">
+    <h1 class="display-4">Aspose.BarCode Test Web Application</h1>
+    <form enctype="multipart/form-data" method="post">
+        <input type="file" id="picture" accept=".jpg, .jpeg, .bmp, .png, .tif"/>
+        <button onclick="SubmitPicture()">Go</button>
+    </form>
+    <div id="imageArea">
+        <img src="favicon.ico" alt=""/>
+        <div class="overlay">
+            <img src="bar.gif" alt=""/>
+        </div>
+    </div>
+    <div id="foundArea">
+        <h2>Found codes:</h2>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        $('form').submit(function (e) {
+            e.preventDefault();            
+        });
+        function SubmitPicture() {
+            let file = $('#picture').prop('files');
+            if (file.length === 0)
+            {
+                alert('Picture file is required!');
+                return;
+            }
+            let reader = new FileReader();
+            reader.readAsDataURL(file[0]);
+            reader.onload = function(e) {
+                $('#imageArea > img').attr('src', e.target.result);
+                $('#imageArea').show();
+            };
+            let formData = new FormData();
+            formData.append("picture", file[0]);
+            $.ajax({
+                type: 'POST',
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                url: '/',
+                data: formData,
+                headers: {
+                    RequestVerificationToken: $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+                beforeSend: function () {
+                    $('#imageArea .codeRectangle').remove();
+                    $('#imageArea .overlay').show();
+                    $('#foundArea').hide();
+                    $('#foundArea p').remove();
+                }
+            }).done(function (result) {
+                $('#imageArea .overlay').hide();
+                $.each(result, function (index, code) {
+                    $('<p/>',{
+                        html: code.codeTypeName + ': ' + code.codeText
+                    }).appendTo('#foundArea');
+                    $('<div/>',{
+                        class: 'codeRectangle',
+                        style: 'top: ' + code.region.rectangle.top + 'px;' +
+                               'left: ' + code.region.rectangle.left + 'px;' +
+                               'width: ' + code.region.rectangle.width + 'px;' +
+                               'height: ' + code.region.rectangle.height + 'px;'  
+                    }).appendTo('#imageArea');
+                });
+                if (result.length === 0) {
+                    $('<p/>',{
+                        html: 'None'
+                    }).appendTo('#foundArea');
+                }
+                $('#foundArea').show();
+                
+            });
+            
+        }
+    </script>
+}
