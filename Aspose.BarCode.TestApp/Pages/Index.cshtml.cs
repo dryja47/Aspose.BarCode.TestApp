@@ -12,6 +12,7 @@ namespace Aspose.BarCode.TestApp.Pages
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> _logger;
+        private readonly string[] _extensions = new[] { ".jpg", ".jpeg", ".bmp", ".png", ".tiff" };
 
         public IndexModel(ILogger<IndexModel> logger)
         {
@@ -24,7 +25,9 @@ namespace Aspose.BarCode.TestApp.Pages
 
         public JsonResult OnPost([FromForm] List<IFormFile> picture)
         {
-            if (picture == null || picture.Count == 0) return new JsonResult(new List<BarCodeResult>());
+            if (picture == null || picture.Count == 0 ||
+                !_extensions.Contains(Path.GetExtension(picture.First().FileName)))
+                return new JsonResult(new List<BarCodeResult>());
             using var stream = new MemoryStream();
             picture.First().CopyTo(stream);
             using var barCodeReader = new BarCodeReader(stream);
